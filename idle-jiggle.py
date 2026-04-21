@@ -29,9 +29,31 @@ You'll be prompted by macOS if you haven't set them yet.
 import argparse
 import re
 import subprocess
+import sys
 
 IDLE_THRESHOLD = 120  # seconds (2 minutes)
 #IDLE_THRESHOLD = 300  # seconds (5 minutes)
+
+
+def check_accessibility():
+    """Check that the calling process has Accessibility permissions."""
+    result = subprocess.run(
+        [
+            "/usr/bin/osascript",
+            "-e",
+            'tell application "System Events" to get name of first process',
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(
+            "Error: Accessibility permission required.\n"
+            "Grant access to the calling process (e.g. Terminal, iTerm2, cron)\n"
+            "in System Settings > Privacy & Security > Accessibility.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def get_idle_seconds():
@@ -69,6 +91,8 @@ def main():
     parser = argparse.ArgumentParser(description="Reset idle timer when idle")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
+
+    check_accessibility()
 
     idle = get_idle_seconds()
 
